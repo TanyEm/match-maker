@@ -8,9 +8,9 @@ import (
 )
 
 type LobbyRequest struct {
-	PlayerID string `json:"player_id"`
-	Level    int    `json:"level"`
-	Country  string `json:"country"`
+	PlayerID string `json:"player_id" binding:"required"`
+	Level    int    `json:"level" binding:"min=1,max=99"`
+	Country  string `json:"country" binding:"required,isocountry"`
 }
 
 type LobbyResponse struct {

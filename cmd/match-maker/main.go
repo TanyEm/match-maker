@@ -12,7 +12,6 @@ import (
 
 	"github.com/TanyEm/match-maker/v2/internal/apiserver"
 	"github.com/caarlos0/env/v10"
-	"github.com/gin-gonic/gin"
 )
 
 type ServiceConfig struct {
@@ -46,20 +45,9 @@ func run(ctx context.Context, cfg *ServiceConfig) error {
 
 	apiServer := apiserver.NewAPIServer()
 
-	r := gin.Default()
-	r.SetTrustedProxies(nil)
-
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
-	})
-	r.POST("/lobby", apiServer.Lobby)
-	r.GET("/match", apiServer.Match)
-
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
-		Handler: r,
+		Handler: apiServer.GinEngine,
 	}
 
 	go func() {
