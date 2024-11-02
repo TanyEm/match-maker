@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/TanyEm/match-maker/v2/internal/apiserver"
 	"github.com/caarlos0/env/v10"
 	"github.com/gin-gonic/gin"
 )
@@ -43,6 +44,8 @@ func main() {
 func run(ctx context.Context, cfg *ServiceConfig) error {
 	errCh := make(chan error)
 
+	apiServer := apiserver.NewAPIServer()
+
 	r := gin.Default()
 	r.SetTrustedProxies(nil)
 
@@ -51,6 +54,8 @@ func run(ctx context.Context, cfg *ServiceConfig) error {
 			"message": "pong",
 		})
 	})
+	r.POST("/lobby", apiServer.Lobby)
+	r.GET("/match", apiServer.Match)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
