@@ -13,6 +13,7 @@ import (
 type Lobbier interface {
 	AddPlayer(p player.Player)
 	GetMatchByJoinID(joinID string) string
+	GetMatchMakingTime() time.Duration
 	Run()
 	Stop()
 }
@@ -20,7 +21,7 @@ type Lobbier interface {
 type Lobby struct {
 	stopCh          chan struct{}
 	mu              sync.Mutex
-	players         sync.Map
+	matchLocations  sync.Map
 	WaitingTime     time.Duration
 	MatchKeeper     match.Keeper
 	playersToNotify map[string]string
@@ -29,11 +30,15 @@ type Lobby struct {
 func NewLobby(waitingTime time.Duration, matchKeeper match.Keeper) *Lobby {
 	return &Lobby{
 		stopCh:          make(chan struct{}),
-		players:         sync.Map{},
+		matchLocations:  sync.Map{},
 		WaitingTime:     waitingTime,
 		MatchKeeper:     matchKeeper,
 		playersToNotify: make(map[string]string),
 	}
+}
+
+func (l *Lobby) GetMatchMakingTime() time.Duration {
+	return l.WaitingTime
 }
 
 func (l *Lobby) Run() {
@@ -64,46 +69,39 @@ func (l *Lobby) AddPlayer(p player.Player) {
 	log.Printf("Player %s joined the lobby, joinID: %s", p.PlayerID, p.JoinID)
 
 	// If the player's location is not in the lobby, create a new match, new location and store it.
-	matchLocation, ok := l.players.Load(p.Country)
+	matchLocation := &match.MatchLocation{}
+	loaded, ok := l.matchLocations.Load(p.Country)
 	if !ok {
-		m := match.NewMatch(p.Country, p.Level)
-		m.AddPlayer(p)
+		newMatch := match.NewMatch(p.Country, p.Level)
+		newMatch.AddPlayer(p)
 
-		ml := &match.MatchLocation{}
-		ml.Store(p.Level, m)
-
-		l.players.Store(p.Country, ml)
+		matchLocation.Store(p.Level, newMatch)
+		l.matchLocations.Store(p.Country, matchLocation)
 		return
 	}
+
+	matchLocation = loaded.(*match.MatchLocation)
 
 	// If the player's location is in the lobby, check if there is a match that the player can join.
 	// I assume that the player can compete with players from the same level and the levels above and below
 	// but the player with level 1 can only compete with players from levels 1, 2, and 3
-	matchLevelsToJoin := make([]int, 3)
+	levelsToJoin := make([]int, 3)
 	if p.Level > 1 {
-		matchLevelsToJoin[0], matchLevelsToJoin[1], matchLevelsToJoin[2] = p.Level-1, p.Level, p.Level+1
+		levelsToJoin[0], levelsToJoin[1], levelsToJoin[2] = p.Level-1, p.Level, p.Level+1
 	} else {
-		matchLevelsToJoin[0], matchLevelsToJoin[1], matchLevelsToJoin[2] = 1, 2, 3
+		levelsToJoin[0], levelsToJoin[1], levelsToJoin[2] = 1, 2, 3
 	}
 
 	// If there is a match that the player can join, add the player to the match
-	for _, level := range matchLevelsToJoin {
-		if m, ok := matchLocation.(*match.MatchLocation).Load(level); ok {
-			m.(*match.Match).AddPlayer(p)
+	for _, level := range levelsToJoin {
+		if loaded, ok := matchLocation.Load(level); ok {
+			matchToJoin := loaded.(*match.Match)
+			matchToJoin.AddPlayer(p)
 
 			// If the match is full, start the match and delete it from the location in the lobby
-			if m.(*match.Match).GetPlayersCount() == 10 {
-				joinIDs := m.(*match.Match).Start()
-				l.mu.Lock()
-				for _, joinID := range joinIDs {
-					l.playersToNotify[joinID] = m.(*match.Match).MatchID
-				}
-				l.mu.Unlock()
-
-				leaderBoard := m.(*match.Match).GetLeaderboard()
-				l.MatchKeeper.AddLeaderBoard(&leaderBoard)
-
-				matchLocation.(*match.MatchLocation).Delete(level)
+			if matchToJoin.GetPlayersCount() == 10 {
+				l.StartMatch(matchToJoin, matchLocation)
+				matchLocation.Delete(level)
 			}
 
 			return
@@ -115,38 +113,47 @@ func (l *Lobby) AddPlayer(p player.Player) {
 	m.AddPlayer(p)
 
 	// Store the match in the player's location
-	matchLocation.(*match.MatchLocation).Store(p.Level, m)
-	l.players.Store(p.Country, matchLocation)
+	matchLocation.Store(p.Level, m)
+	l.matchLocations.Store(p.Country, matchLocation)
 }
 
+func (l *Lobby) StartMatch(m *match.Match, matchLocation *match.MatchLocation) {
+	joinIDs := m.Start()
+	l.mu.Lock()
+	for _, joinID := range joinIDs {
+		l.playersToNotify[joinID] = m.MatchID
+	}
+	l.mu.Unlock()
+
+	leaderBoard := m.GetLeaderboard()
+	l.MatchKeeper.AddLeaderBoard(&leaderBoard)
+}
+
+// StartMatches starts the matches that have more than one player across all locations in the lobby
+// and cleans the lobby
 func (l *Lobby) StartMatches() {
-	l.players.Range(func(country, ml interface{}) bool {
-		ml.(*match.MatchLocation).Range(func(level, m interface{}) bool {
+	l.matchLocations.Range(func(country, loaded interface{}) bool {
+		matchLocation := loaded.(*match.MatchLocation)
+
+		matchLocation.Range(func(level, loaded interface{}) bool {
+			matchToStart := loaded.(*match.Match)
 
 			// If there is more than one player in the match, start the match
-			if m.(*match.Match).GetPlayersCount() > 1 {
-				joinIDs := m.(*match.Match).Start()
-				l.mu.Lock()
-				for _, joinID := range joinIDs {
-					l.playersToNotify[joinID] = m.(*match.Match).MatchID
-				}
-				l.mu.Unlock()
-
-				leaderBoard := m.(*match.Match).GetLeaderboard()
-				l.MatchKeeper.AddLeaderBoard(&leaderBoard)
+			if matchToStart.GetPlayersCount() > 1 {
+				l.StartMatch(matchToStart, matchLocation)
 			} else {
-				log.Printf("Match %s country %s level %d has only one player. Removing the match...\n",
-					m.(*match.Match).MatchID,
-					m.(*match.Match).Country,
-					m.(*match.Match).Level,
+				log.Printf("Match %s country %s level %d has only one player. Skipping the match...\n",
+					matchToStart.MatchID,
+					matchToStart.Country,
+					matchToStart.Level,
 				)
 			}
 
-			ml.(*match.MatchLocation).Delete(level)
+			matchLocation.Delete(level)
 			return true
 		})
 
-		l.players.Clear()
+		l.matchLocations.Clear()
 		return true
 	})
 }

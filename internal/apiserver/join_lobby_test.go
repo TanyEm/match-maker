@@ -10,6 +10,7 @@ import (
 	"github.com/TanyEm/match-maker/v2/internal/lobby"
 	"github.com/TanyEm/match-maker/v2/internal/match"
 	"github.com/TanyEm/match-maker/v2/internal/player"
+	"github.com/TanyEm/match-maker/v2/test/utils"
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 )
@@ -43,7 +44,7 @@ func TestJoinLobby(t *testing.T) {
 					Country:  "USA",
 					JoinID:   gomock.Any().String(),
 				}
-				srv.Lobby.(*lobby.MockLobbier).EXPECT().AddPlayer(player.EqPlayer(p)).Times(1)
+				srv.Lobby.(*lobby.MockLobbier).EXPECT().AddPlayer(utils.EqPlayer(p)).Times(1)
 			},
 		},
 		{

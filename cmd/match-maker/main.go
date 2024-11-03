@@ -19,6 +19,7 @@ import (
 type ServiceConfig struct {
 	Port             int           `env:"PORT" envDefault:"8080"`
 	ShutdownDuration time.Duration `env:"SHUTDOWN_DURATION" envDefault:"3s"`
+	MatchMakingTime  time.Duration `env:"MATCH_MAKING_TIME" envDefault:"30s"`
 }
 
 func main() {
@@ -47,7 +48,7 @@ func run(ctx context.Context, cfg *ServiceConfig) error {
 
 	matchStorage := match.NewStorage()
 
-	lobby := lobby.NewLobby(30*time.Second, matchStorage)
+	lobby := lobby.NewLobby(cfg.MatchMakingTime, matchStorage)
 	go func() {
 		lobby.Run()
 	}()
@@ -79,6 +80,7 @@ func run(ctx context.Context, cfg *ServiceConfig) error {
 		log.Printf("Shutting down server...")
 	}
 
+	// Graceful shutdown to ensure that all other goroutines have time to finish their work
 	log.Printf("Shutting down server in %s", cfg.ShutdownDuration.String())
 	time.Sleep(cfg.ShutdownDuration)
 

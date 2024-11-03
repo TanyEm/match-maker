@@ -11,6 +11,7 @@ package lobby
 
 import (
 	reflect "reflect"
+	time "time"
 
 	player "github.com/TanyEm/match-maker/v2/internal/player"
 	gomock "go.uber.org/mock/gomock"
@@ -64,6 +65,20 @@ func (m *MockLobbier) GetMatchByJoinID(joinID string) string {
 func (mr *MockLobbierMockRecorder) GetMatchByJoinID(joinID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatchByJoinID", reflect.TypeOf((*MockLobbier)(nil).GetMatchByJoinID), joinID)
+}
+
+// GetMatchMakingTime mocks base method.
+func (m *MockLobbier) GetMatchMakingTime() time.Duration {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMatchMakingTime")
+	ret0, _ := ret[0].(time.Duration)
+	return ret0
+}
+
+// GetMatchMakingTime indicates an expected call of GetMatchMakingTime.
+func (mr *MockLobbierMockRecorder) GetMatchMakingTime() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatchMakingTime", reflect.TypeOf((*MockLobbier)(nil).GetMatchMakingTime))
 }
 
 // Run mocks base method.

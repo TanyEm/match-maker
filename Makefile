@@ -7,12 +7,10 @@ BIN_DIR := bin
 DIST_DIR := dist
 
 GO_FILES = $(shell find . -type f -name "*.go"  -not -name "mock_*.go" -not -name "*_test.go" $(exclude_dirs))
-GO_FILES_TO_FORMAT = $(shell find . -type f -name "*.go" -not -name "mock_*.go" -not -name "*.pb.go" $(exclude_dirs))
 GO_TEST_COVERAGE_PATH := coverage.out
-MOCK_GEN ?= $(whereis mockgen | cut -d' ' -f2)
 PACKAGE := github.com/TanyEm/match-maker
 
-all: generate build
+all: install generate build
 
 install: go.mod go.sum ## Install dependencies
 	go mod download
@@ -20,8 +18,9 @@ install: go.mod go.sum ## Install dependencies
 .PHONY: install
 
 generate:
-	([ ! -z $(MOCK_GEN) ] && test -s $(MOCK_GEN)) || go install go.uber.org/mock/mockgen
+	go get go.uber.org/mock/mockgen@v0.5.0
 	go generate ./...
+	go mod tidy -v
 .PHONY: generate
 
 .PHONY: test

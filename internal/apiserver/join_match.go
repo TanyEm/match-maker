@@ -15,7 +15,7 @@ type MatchResponse struct {
 
 func (s *APIServer) JoinMatch(ctx *gin.Context) {
 	// Create a context with a 30-second timeout
-	c, cancel := context.WithTimeout(ctx.Request.Context(), 30*time.Second)
+	c, cancel := context.WithTimeout(ctx.Request.Context(), s.Lobby.GetMatchMakingTime())
 	defer cancel()
 
 	// Replace the request's context with the new one
@@ -33,6 +33,8 @@ func (s *APIServer) JoinMatch(ctx *gin.Context) {
 	}
 
 	var matchID string
+
+	// Wait for the match to be created for s.Lobby.GetMatchMakingTime() seconds
 	for {
 		matchID = s.Lobby.GetMatchByJoinID(joinID)
 		if matchID != "" {

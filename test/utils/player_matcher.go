@@ -1,20 +1,21 @@
-package player
+package utils
 
 import (
 	"fmt"
 
+	"github.com/TanyEm/match-maker/v2/internal/player"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 )
 
 // PlayerMatcher is a custom matcher for player.Player
 type PlayerMatcher struct {
-	expected Player
+	expected player.Player
 }
 
 // Matches checks if the actual player matches the expected player
 func (m PlayerMatcher) Matches(x interface{}) bool {
-	actual, ok := x.(Player)
+	actual, ok := x.(player.Player)
 	if !ok {
 		return false
 	}
@@ -34,6 +35,6 @@ func (m PlayerMatcher) String() string {
 }
 
 // EqPlayer returns a PlayerMatcher for the given player
-func EqPlayer(p Player) gomock.Matcher {
+func EqPlayer(p player.Player) gomock.Matcher {
 	return PlayerMatcher{expected: p}
 }
