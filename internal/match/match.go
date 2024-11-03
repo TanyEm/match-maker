@@ -58,9 +58,17 @@ func (m *Match) AddPlayer(p player.Player) {
 	log.Printf("Player %s level %d joined the match with %d people: country %s level %d matchID: %s", p.PlayerID, p.Level, len(m.players), m.Country, m.Level, m.MatchID)
 }
 
-func (m *Match) Start() {
+func (m *Match) Start() []string {
 	m.started = true
 	log.Printf("Match %s started. Notifying %d players...", m.MatchID, len(m.players))
+
+	joinIDs := make([]string, 0, len(m.players))
+
+	for _, p := range m.players {
+		joinIDs = append(joinIDs, p.JoinID)
+	}
+
+	return joinIDs
 }
 
 func (m *Match) GetPlayersCount() int {

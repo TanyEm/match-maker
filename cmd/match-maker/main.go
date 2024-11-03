@@ -12,6 +12,7 @@ import (
 
 	"github.com/TanyEm/match-maker/v2/internal/apiserver"
 	"github.com/TanyEm/match-maker/v2/internal/lobby"
+	"github.com/TanyEm/match-maker/v2/internal/match"
 	"github.com/caarlos0/env/v10"
 )
 
@@ -44,12 +45,14 @@ func main() {
 func run(ctx context.Context, cfg *ServiceConfig) error {
 	errCh := make(chan error)
 
-	lobby := lobby.NewLobby(15 * time.Second)
+	matchStorage := match.NewStorage()
+
+	lobby := lobby.NewLobby(30*time.Second, matchStorage)
 	go func() {
 		lobby.Run()
 	}()
 
-	apiServer := apiserver.NewAPIServer(lobby)
+	apiServer := apiserver.NewAPIServer(lobby, matchStorage)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),

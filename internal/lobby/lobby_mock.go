@@ -52,6 +52,20 @@ func (mr *MockLobbierMockRecorder) AddPlayer(p any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPlayer", reflect.TypeOf((*MockLobbier)(nil).AddPlayer), p)
 }
 
+// GetMatchByJoinID mocks base method.
+func (m *MockLobbier) GetMatchByJoinID(joinID string) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMatchByJoinID", joinID)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetMatchByJoinID indicates an expected call of GetMatchByJoinID.
+func (mr *MockLobbierMockRecorder) GetMatchByJoinID(joinID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatchByJoinID", reflect.TypeOf((*MockLobbier)(nil).GetMatchByJoinID), joinID)
+}
+
 // Run mocks base method.
 func (m *MockLobbier) Run() {
 	m.ctrl.T.Helper()

@@ -11,14 +11,15 @@ import (
 )
 
 type APIServer struct {
-	GinEngine *gin.Engine
-	Lobby     lobby.Lobbier
-	Match     match.Matcher
+	GinEngine   *gin.Engine
+	Lobby       lobby.Lobbier
+	MatchKeeper match.Keeper
 }
 
-func NewAPIServer(lobby lobby.Lobbier) *APIServer {
+func NewAPIServer(lobby lobby.Lobbier, matchKeeper match.Keeper) *APIServer {
 	apiServer := &APIServer{
-		Lobby: lobby,
+		Lobby:       lobby,
+		MatchKeeper: matchKeeper,
 	}
 
 	r := gin.Default()
@@ -35,6 +36,7 @@ func NewAPIServer(lobby lobby.Lobbier) *APIServer {
 	})
 	r.POST("/lobby", apiServer.JoinLobby)
 	r.GET("/match", apiServer.JoinMatch)
+	r.GET("/leaderboard", apiServer.GetLeaderBoard)
 
 	apiServer.GinEngine = r
 

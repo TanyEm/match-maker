@@ -12,22 +12,27 @@ import (
 //go:generate mockgen -destination=./lobby_mock.go -package=lobby github.com/TanyEm/match-maker/v2/internal/lobby Lobbier
 type Lobbier interface {
 	AddPlayer(p player.Player)
+	GetMatchByJoinID(joinID string) string
 	Run()
 	Stop()
 }
 
 type Lobby struct {
-	stopCh      chan struct{}
-	mu          sync.Mutex
-	players     sync.Map
-	WaitingTime time.Duration
+	stopCh          chan struct{}
+	mu              sync.Mutex
+	players         sync.Map
+	WaitingTime     time.Duration
+	MatchKeeper     match.Keeper
+	playersToNotify map[string]string
 }
 
-func NewLobby(waitingTime time.Duration) *Lobby {
+func NewLobby(waitingTime time.Duration, matchKeeper match.Keeper) *Lobby {
 	return &Lobby{
-		stopCh:      make(chan struct{}),
-		players:     sync.Map{},
-		WaitingTime: waitingTime,
+		stopCh:          make(chan struct{}),
+		players:         sync.Map{},
+		WaitingTime:     waitingTime,
+		MatchKeeper:     matchKeeper,
+		playersToNotify: make(map[string]string),
 	}
 }
 
@@ -88,7 +93,16 @@ func (l *Lobby) AddPlayer(p player.Player) {
 
 			// If the match is full, start the match and delete it from the location in the lobby
 			if m.(*match.Match).GetPlayersCount() == 10 {
-				m.(*match.Match).Start()
+				joinIDs := m.(*match.Match).Start()
+				l.mu.Lock()
+				for _, joinID := range joinIDs {
+					l.playersToNotify[joinID] = m.(*match.Match).MatchID
+				}
+				l.mu.Unlock()
+
+				leaderBoard := m.(*match.Match).GetLeaderboard()
+				l.MatchKeeper.AddLeaderBoard(&leaderBoard)
+
 				matchLocation.(*match.MatchLocation).Delete(level)
 			}
 
@@ -111,7 +125,15 @@ func (l *Lobby) StartMatches() {
 
 			// If there is more than one player in the match, start the match
 			if m.(*match.Match).GetPlayersCount() > 1 {
-				m.(*match.Match).Start()
+				joinIDs := m.(*match.Match).Start()
+				l.mu.Lock()
+				for _, joinID := range joinIDs {
+					l.playersToNotify[joinID] = m.(*match.Match).MatchID
+				}
+				l.mu.Unlock()
+
+				leaderBoard := m.(*match.Match).GetLeaderboard()
+				l.MatchKeeper.AddLeaderBoard(&leaderBoard)
 			} else {
 				log.Printf("Match %s country %s level %d has only one player. Removing the match...\n",
 					m.(*match.Match).MatchID,
@@ -127,4 +149,15 @@ func (l *Lobby) StartMatches() {
 		l.players.Clear()
 		return true
 	})
+}
+
+func (l *Lobby) GetMatchByJoinID(joinID string) string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if matchID, ok := l.playersToNotify[joinID]; ok {
+		return matchID
+	}
+
+	return ""
 }

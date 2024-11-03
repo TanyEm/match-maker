@@ -1,13 +1,13 @@
 package match
 
 type LeaderBoard struct {
-	MatchID string
-	Players []PlayerInfo
+	MatchID string       `json:"match_id"`
+	Players []PlayerInfo `json:"players"`
 }
 
 type PlayerInfo struct {
-	PlayerID string
-	Level    int
-	Country  string
-	Score    int
+	PlayerID string `json:"player_id"`
+	Level    int    `json:"level"`
+	Country  string `json:"country"`
+	Score    int    `json:"score"`
 }

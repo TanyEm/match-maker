@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/TanyEm/match-maker/v2/internal/lobby"
+	"github.com/TanyEm/match-maker/v2/internal/match"
 	"github.com/TanyEm/match-maker/v2/internal/player"
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
@@ -17,7 +18,7 @@ func TestJoinLobby(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	srv := NewAPIServer(lobby.NewMockLobbier(ctrl))
+	srv := NewAPIServer(lobby.NewMockLobbier(ctrl), match.NewMockKeeper(ctrl))
 
 	tests := []struct {
 		name                string
