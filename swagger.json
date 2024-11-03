@@ -1,0 +1,219 @@
+{
+    "swagger": "2.0",
+    "info": {
+      "description": "This is the API documentation for the match-maker service.",
+      "version": "1.0.0",
+      "title": "Match-Maker API"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "schemes": [
+      "http"
+    ],
+    "paths": {
+      "/ping": {
+        "get": {
+          "summary": "Ping",
+          "description": "Returns a pong message",
+          "produces": [
+            "application/json"
+          ],
+          "responses": {
+            "200": {
+              "description": "pong",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/lobby": {
+        "post": {
+          "summary": "Join Lobby",
+          "description": "Allows a player to join the lobby",
+          "consumes": [
+            "application/json"
+          ],
+          "produces": [
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "in": "body",
+              "name": "player",
+              "description": "Player Data",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Player"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Lobby joined",
+              "schema": {
+                "$ref": "#/definitions/LobbyResponse"
+              }
+            },
+            "400": {
+              "description": "Invalid input",
+              "schema": {
+                "$ref": "#/definitions/ErrorResponse"
+              }
+            }
+          }
+        }
+      },
+      "/match": {
+        "get": {
+          "summary": "Join Match",
+          "description": "Allows a player to join a match",
+          "produces": [
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "name": "join_id",
+              "in": "query",
+              "description": "Join ID",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Match joined",
+              "schema": {
+                "$ref": "#/definitions/MatchResponse"
+              }
+            },
+            "400": {
+              "description": "Invalid input",
+              "schema": {
+                "$ref": "#/definitions/ErrorResponse"
+              }
+            }
+          }
+        }
+      },
+      "/leaderboard": {
+        "get": {
+          "summary": "Get Leaderboard",
+          "description": "Retrieves the leaderboard",
+          "produces": [
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "name": "match_id",
+              "in": "query",
+              "description": "Match ID",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Leaderboard retrieved",
+              "schema": {
+                "$ref": "#/definitions/GetLeaderBoardResponse"
+              }
+            },
+            "400": {
+              "description": "Invalid input",
+              "schema": {
+                "$ref": "#/definitions/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "definitions": {
+      "Player": {
+        "type": "object",
+        "required": [
+          "player_id",
+          "level",
+          "country"
+        ],
+        "properties": {
+          "player_id": {
+            "type": "string"
+          },
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "maximum": 99
+          },
+          "country": {
+            "type": "string"
+          }
+        }
+      },
+      "LobbyResponse": {
+        "type": "object",
+        "properties": {
+          "join_id": {
+            "type": "string"
+          }
+        }
+      },
+      "MatchResponse": {
+        "type": "object",
+        "properties": {
+          "match_id": {
+            "type": "string"
+          }
+        }
+      },
+      "GetLeaderBoardResponse": {
+        "type": "object",
+        "properties": {
+          "match_id": {
+            "type": "string"
+          },
+          "players": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/LeaderBoardPlayer"
+            }
+          }
+        }
+      },
+      "LeaderBoardPlayer": {
+        "type": "object",
+        "properties": {
+          "player_id": {
+            "type": "string"
+          },
+          "level": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "country": {
+            "type": "string"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
