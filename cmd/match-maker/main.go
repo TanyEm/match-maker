@@ -44,7 +44,7 @@ func main() {
 func run(ctx context.Context, cfg *ServiceConfig) error {
 	errCh := make(chan error)
 
-	lobby := lobby.NewLobby(30 * time.Second)
+	lobby := lobby.NewLobby(120 * time.Second)
 	go func() {
 		lobby.Run()
 	}()

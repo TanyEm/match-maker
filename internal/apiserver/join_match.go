@@ -11,7 +11,7 @@ type MatchResponse struct {
 	MatchID string `json:"match_id"`
 }
 
-func (s *APIServer) Match(ctx *gin.Context) {
+func (s *APIServer) JoinMatch(ctx *gin.Context) {
 	joinID := ctx.Query("join_id")
 	if joinID == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "join_id is required"})
@@ -23,6 +23,7 @@ func (s *APIServer) Match(ctx *gin.Context) {
 		return
 	}
 
-	matchID := uuid.New().String()
-	ctx.JSON(http.StatusOK, MatchResponse{MatchID: matchID})
+	match := s.Match.Match(uuid.New().String())
+
+	ctx.JSON(http.StatusOK, MatchResponse{MatchID: match.MatchID})
 }
