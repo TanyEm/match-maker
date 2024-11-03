@@ -3,6 +3,7 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/TanyEm/match-maker/v2/internal/lobby"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -10,10 +11,13 @@ import (
 
 type APIServer struct {
 	GinEngine *gin.Engine
+	Lobby     lobby.Lobbier
 }
 
-func NewAPIServer() *APIServer {
-	apiServer := &APIServer{}
+func NewAPIServer(lobby lobby.Lobbier) *APIServer {
+	apiServer := &APIServer{
+		Lobby: lobby,
+	}
 
 	r := gin.Default()
 	r.SetTrustedProxies(nil)
@@ -27,7 +31,7 @@ func NewAPIServer() *APIServer {
 			"message": "pong",
 		})
 	})
-	r.POST("/lobby", apiServer.Lobby)
+	r.POST("/lobby", apiServer.JoinLobby)
 	r.GET("/match", apiServer.Match)
 
 	apiServer.GinEngine = r

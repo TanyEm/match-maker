@@ -7,11 +7,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/TanyEm/match-maker/v2/internal/lobby"
+	"github.com/TanyEm/match-maker/v2/internal/player"
 	"github.com/google/uuid"
+	"go.uber.org/mock/gomock"
 )
 
-func TestLobby(t *testing.T) {
-	srv := NewAPIServer()
+func TestJoinLobby(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	srv := NewAPIServer(lobby.NewMockLobbier(ctrl))
 
 	tests := []struct {
 		name                string
@@ -20,6 +26,7 @@ func TestLobby(t *testing.T) {
 		expectedCode        int
 		expectedContentType string
 		expectedBody        string
+		expectedMockCalls   func()
 	}{
 		{
 			name:                "valid request",
@@ -28,6 +35,15 @@ func TestLobby(t *testing.T) {
 			expectedCode:        200,
 			expectedContentType: "application/json; charset=utf-8",
 			expectedBody:        `{"join_id":"00000000-0000-0000-0000-000000000000"}`,
+			expectedMockCalls: func() {
+				p := player.Player{
+					PlayerID: "player1",
+					Level:    1,
+					Country:  "USA",
+					JoinID:   gomock.Any().String(),
+				}
+				srv.Lobby.(*lobby.MockLobbier).EXPECT().AddPlayer(player.EqPlayer(p)).Times(1)
+			},
 		},
 		{
 			name:                "not valid request: empty player_id",
@@ -36,6 +52,7 @@ func TestLobby(t *testing.T) {
 			expectedCode:        400,
 			expectedContentType: "application/json; charset=utf-8",
 			expectedBody:        `{"error":"Key: 'LobbyRequest.PlayerID' Error:Field validation for 'PlayerID' failed on the 'required' tag"}`,
+			expectedMockCalls:   func() {},
 		},
 		{
 			name:                "not valid request: incorrect level negative number",
@@ -44,6 +61,7 @@ func TestLobby(t *testing.T) {
 			expectedCode:        400,
 			expectedContentType: "application/json; charset=utf-8",
 			expectedBody:        `{"error":"Key: 'LobbyRequest.Level' Error:Field validation for 'Level' failed on the 'min' tag"}`,
+			expectedMockCalls:   func() {},
 		},
 		{
 			name:                "not valid request: incorrect level zero",
@@ -52,6 +70,7 @@ func TestLobby(t *testing.T) {
 			expectedCode:        400,
 			expectedContentType: "application/json; charset=utf-8",
 			expectedBody:        `{"error":"Key: 'LobbyRequest.Level' Error:Field validation for 'Level' failed on the 'min' tag"}`,
+			expectedMockCalls:   func() {},
 		},
 		{
 			name:                "not valid request: incorrect level wrong type",
@@ -60,6 +79,7 @@ func TestLobby(t *testing.T) {
 			expectedCode:        400,
 			expectedContentType: "application/json; charset=utf-8",
 			expectedBody:        `{"error":"json: cannot unmarshal string into Go struct field LobbyRequest.level of type int"}`,
+			expectedMockCalls:   func() {},
 		},
 		{
 			name:                "not valid request: incorrect country code",
@@ -68,6 +88,7 @@ func TestLobby(t *testing.T) {
 			expectedCode:        400,
 			expectedContentType: "application/json; charset=utf-8",
 			expectedBody:        `{"error":"Key: 'LobbyRequest.Country' Error:Field validation for 'Country' failed on the 'isocountry' tag"}`,
+			expectedMockCalls:   func() {},
 		},
 		{
 			name:                "not valid request: invalid json",
@@ -76,11 +97,13 @@ func TestLobby(t *testing.T) {
 			expectedCode:        400,
 			expectedContentType: "application/json; charset=utf-8",
 			expectedBody:        `{"error":"unexpected EOF"}`,
+			expectedMockCalls:   func() {},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.expectedMockCalls()
 			recorder := httptest.NewRecorder()
 
 			req, err := http.NewRequest(http.MethodPost, "/lobby", bytes.NewReader(tt.req))

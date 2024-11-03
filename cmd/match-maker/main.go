@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/TanyEm/match-maker/v2/internal/apiserver"
+	"github.com/TanyEm/match-maker/v2/internal/lobby"
 	"github.com/caarlos0/env/v10"
 )
 
@@ -43,7 +44,12 @@ func main() {
 func run(ctx context.Context, cfg *ServiceConfig) error {
 	errCh := make(chan error)
 
-	apiServer := apiserver.NewAPIServer()
+	lobby := lobby.NewLobby(30 * time.Second)
+	go func() {
+		lobby.Run()
+	}()
+
+	apiServer := apiserver.NewAPIServer(lobby)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
@@ -71,10 +77,11 @@ func run(ctx context.Context, cfg *ServiceConfig) error {
 	}
 
 	log.Printf("Shutting down server in %s", cfg.ShutdownDuration.String())
-
 	time.Sleep(cfg.ShutdownDuration)
 
+	// Shutting down the match-maker and then lobby
 	srv.Shutdown(ctx)
+	lobby.Stop()
 
 	return nil
 }
