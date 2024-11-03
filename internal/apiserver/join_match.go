@@ -14,13 +14,6 @@ type MatchResponse struct {
 }
 
 func (s *APIServer) JoinMatch(ctx *gin.Context) {
-	// Create a context with a 30-second timeout
-	c, cancel := context.WithTimeout(ctx.Request.Context(), s.Lobby.GetMatchMakingTime())
-	defer cancel()
-
-	// Replace the request's context with the new one
-	ctx.Request = ctx.Request.WithContext(c)
-
 	joinID := ctx.Query("join_id")
 	if joinID == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "join_id is required"})
@@ -31,6 +24,13 @@ func (s *APIServer) JoinMatch(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "join_id is not valid UUID"})
 		return
 	}
+
+	// Create a context with a 30-second timeout
+	c, cancel := context.WithTimeout(ctx.Request.Context(), s.Lobby.GetMatchMakingTime())
+	defer cancel()
+
+	// Replace the request's context with the new one
+	ctx.Request = ctx.Request.WithContext(c)
 
 	var matchID string
 
