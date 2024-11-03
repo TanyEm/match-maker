@@ -9,6 +9,8 @@ import (
 	"github.com/TanyEm/match-maker/v2/internal/player"
 )
 
+const ErrNoMatch = "ErrNoMatch"
+
 //go:generate mockgen -destination=./lobby_mock.go -package=lobby github.com/TanyEm/match-maker/v2/internal/lobby Lobbier
 type Lobbier interface {
 	AddPlayer(p player.Player)
@@ -142,11 +144,16 @@ func (l *Lobby) StartMatches() {
 			if matchToStart.GetPlayersCount() > 1 {
 				l.StartMatch(matchToStart, matchLocation)
 			} else {
-				log.Printf("Match %s country %s level %d has only one player. Skipping the match...\n",
+				log.Printf("Match %s country %s level %d has only one player. Skipping the match and notifying the player...\n",
 					matchToStart.MatchID,
 					matchToStart.Country,
 					matchToStart.Level,
 				)
+
+				l.mu.Lock()
+				stalePlayer := matchToStart.GetPlayers()[0]
+				l.playersToNotify[stalePlayer.JoinID] = ErrNoMatch
+				l.mu.Unlock()
 			}
 
 			matchLocation.Delete(level)

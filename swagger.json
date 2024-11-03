@@ -73,7 +73,7 @@
       "/match": {
         "get": {
           "summary": "Join Match",
-          "description": "Allows a player to join a match",
+          "description": "Allows a player to join a match. Note, this is supposed to be a polling-request from client side, meaning wait at most 30 seconds (default MATCH_MAKING_TIME configured on the server side). The client may also have lower timeouts and retry the request until the result is provided.",
           "produces": [
             "application/json"
           ],

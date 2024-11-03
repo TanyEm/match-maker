@@ -40,8 +40,25 @@ func TestJoinMatch(t *testing.T) {
 					Times(1)
 				srv.Lobby.(*lobby.MockLobbier).EXPECT().
 					GetMatchByJoinID("72b33e85-e8cd-45e6-89f4-25bfdac584d8").
-					AnyTimes().
+					Times(1).
 					Return("d1b18698-f7eb-4cb1-b7f2-97e4b44c2c1d")
+			},
+		},
+		{
+			name:                "valid request but no match",
+			reqURL:              "/match?join_id=72b33e85-e8cd-45e6-89f4-25bfdac584d8",
+			expectedError:       true,
+			expectedCode:        404,
+			expectedContentType: "application/json; charset=utf-8",
+			expectedBody:        `{"error":"no match for the player, try to join the lobby again"}`,
+			expectedMockCalls: func() {
+				srv.Lobby.(*lobby.MockLobbier).EXPECT().
+					GetMatchMakingTime().
+					Times(1)
+				srv.Lobby.(*lobby.MockLobbier).EXPECT().
+					GetMatchByJoinID("72b33e85-e8cd-45e6-89f4-25bfdac584d8").
+					Times(1).
+					Return(lobby.ErrNoMatch)
 			},
 		},
 		{

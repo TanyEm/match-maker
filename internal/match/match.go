@@ -16,6 +16,7 @@ type MatchLocation struct {
 type Matcher interface {
 	Match(matchID string) *Match
 	AddPlayer(p player.Player)
+	GetPlayers() []player.Player
 	GetPlayersCount() int
 	Start()
 }
@@ -69,6 +70,10 @@ func (m *Match) Start() []string {
 	}
 
 	return joinIDs
+}
+
+func (m *Match) GetPlayers() []player.Player {
+	return m.players
 }
 
 func (m *Match) GetPlayersCount() int {

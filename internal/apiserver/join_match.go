@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/TanyEm/match-maker/v2/internal/lobby"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -41,6 +42,11 @@ func (s *APIServer) JoinMatch(ctx *gin.Context) {
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
+	}
+
+	if matchID == lobby.ErrNoMatch {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "no match for the player, try to join the lobby again"})
+		return
 	}
 
 	ctx.JSON(http.StatusOK, MatchResponse{MatchID: matchID})
