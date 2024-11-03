@@ -184,3 +184,4 @@ During the development I used GitHub Copilot for:
  - Used [Gin HTTP framework](https://github.com/gin-gonic/gin/tree/master) and its [docs](https://github.com/gin-gonic/gin/blob/master/docs/doc.md) to implement the router and validators
  - Made all data storages in-memory to save time. In real project I would look into more persistent options like Redis for Lobby data or Postgres or Mongo for matches data for example.
  - Could not complete all tests due to time limitations but believe it is a **must** to complete them for a real project, especially for Lobby logic
+ - When testing I used `Insomnia 10.1.1` web-client and found out it had 30 sec request timeout by default on exactly 30seconds (match-making time) so had to adjust the `Insomnia` settings `:)` and also tested with `curl`

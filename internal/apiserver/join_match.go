@@ -26,7 +26,7 @@ func (s *APIServer) JoinMatch(ctx *gin.Context) {
 		return
 	}
 
-	// Create a context with a 30-second timeout
+	// Create a context with a s.Lobby.GetMatchMakingTime() (default 30 sec) timeout
 	c, cancel := context.WithTimeout(ctx.Request.Context(), s.Lobby.GetMatchMakingTime())
 	defer cancel()
 
@@ -42,6 +42,10 @@ func (s *APIServer) JoinMatch(ctx *gin.Context) {
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
+		if c.Err() != nil {
+			matchID = lobby.ErrNoMatch
+			break
+		}
 	}
 
 	if matchID == lobby.ErrNoMatch {

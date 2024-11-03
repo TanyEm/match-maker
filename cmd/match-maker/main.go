@@ -56,8 +56,10 @@ func run(ctx context.Context, cfg *ServiceConfig) error {
 	apiServer := apiserver.NewAPIServer(lobby, matchStorage)
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.Port),
-		Handler: apiServer.GinEngine,
+		Addr:         fmt.Sprintf(":%d", cfg.Port),
+		Handler:      apiServer.GinEngine,
+		ReadTimeout:  1 * time.Minute,
+		WriteTimeout: 1 * time.Minute,
 	}
 
 	go func() {
