@@ -1,6 +1,14 @@
 # Match Maker
 
-Match Maker is a service designed to manage player lobbies and match players based on certain criteria. This service provides APIs to join lobbies and create matches. Once the expected number of players have joined (or 30 seconds of waiting has passed), the match creates.
+Match Maker is a service designed to manage player lobbies and match players based on certain criteria. This service provides APIs to join lobbies and create matches. Once the expected number of players have joined (or 30 seconds of waiting has passed), the match creates. I also assume that
+- players can have any name so I do not validate player_id uniqueness (could be implemented in the future)
+- players can have a level from 1 to 99
+- for matchmaking, players are combined with +1/-1 level from theirs, for example:
+  - a player with Level 4 could be placed with players of Level 3 and Level 5
+  - **note** that a player with Level 1 will be placed with players of Level 1 or Level 2 or Level 3
+- matches with only 1 player do not start, but player is notified and asked to join the lobby again
+- players are grouped into matches by countries first, and then by their similar levels. Note, that I implemented grouping only by 1 country. Grouping by nearest countries could also be implemented later.
+- /leaderboard (see detailed API below) returns players with `score: 0`. I assumed the score would change as the match goes
 
 ## Table of Contents
 
@@ -10,6 +18,8 @@ Match Maker is a service designed to manage player lobbies and match players bas
 - [API Endpoints](#api-endpoints)
 - [Configuration](#configuration)
 - [Running Tests](#running-tests)
+- [Use of AI tools](#use-of-ai-tools)
+- [Additional notes](#additional-notes)
 
 ## Structure
 
@@ -155,3 +165,22 @@ go install go.uber.org/mock/mockgen@latest
 export PATH=$PATH:$(go env GOPATH)/bin
 mockgen -version
 ```
+
+## Use of AI tools
+
+During the development I used GitHub Copilot for:
+
+ - Faster code writing and auto completion
+ - FAQ for how to do certain things in Go like channels, table tests, 30 second polling using context, graceful shutdown and so on
+
+## Additional notes
+
+ - Added Makefile for simpler usage of basic Go commands
+ - I looked for project structure from best examples like [Go Project Layout](https://github.com/golang-standards/project-layout) and [Kubernetes repo](https://github.com/kubernetes/kubernetes) etc to
+    - put executables like main.go in cmd/match-maker
+    - have service logic organized in /internal packages
+    - have test utils available at the root project
+ - Studied Go Tour and the Effective Go a bit and tried to follow the "Go Way"
+ - Used [Gin HTTP framework](https://github.com/gin-gonic/gin/tree/master) and its [docs](https://github.com/gin-gonic/gin/blob/master/docs/doc.md) to implement the router and validators
+ - Made all data storages in-memory to save time. In real project I would look into more persistent options like Redis for Lobby data or Postgres or Mongo for matches data for example.
+ - Could not complete all tests due to time limitations but believe it is a **must** to complete them for a real project, especially for Lobby logic
