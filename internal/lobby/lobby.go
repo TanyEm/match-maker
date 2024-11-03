@@ -40,8 +40,8 @@ func (l *Lobby) Run() {
 	for {
 		select {
 		case <-ticker.C:
-			log.Println("Time is up! Cleaning up the lobby...")
-			l.players.Clear()
+			log.Println("Time is up! Start mathmaking...")
+			l.StartMatches()
 		case <-time.After(100 * time.Millisecond): // Throttle the loop to decrease the load on the CPU
 		case <-l.stopCh:
 			log.Println("Lobby is stopped.")
@@ -85,6 +85,13 @@ func (l *Lobby) AddPlayer(p player.Player) {
 	for _, level := range matchLevelsToJoin {
 		if m, ok := matchLocation.(*match.MatchLocation).Load(level); ok {
 			m.(*match.Match).AddPlayer(p)
+
+			// If the match is full, start the match and delete it from the location in the lobby
+			if m.(*match.Match).GetPlayersCount() == 10 {
+				m.(*match.Match).Start()
+				matchLocation.(*match.MatchLocation).Delete(level)
+			}
+
 			return
 		}
 	}
@@ -94,6 +101,30 @@ func (l *Lobby) AddPlayer(p player.Player) {
 	m.AddPlayer(p)
 
 	// Store the match in the player's location
-	matchLocation.(*match.MatchLocation).Store(p.Country, m)
-	l.players.Store(p.Level, matchLocation)
+	matchLocation.(*match.MatchLocation).Store(p.Level, m)
+	l.players.Store(p.Country, matchLocation)
+}
+
+func (l *Lobby) StartMatches() {
+	l.players.Range(func(country, ml interface{}) bool {
+		ml.(*match.MatchLocation).Range(func(level, m interface{}) bool {
+
+			// If there is more than one player in the match, start the match
+			if m.(*match.Match).GetPlayersCount() > 1 {
+				m.(*match.Match).Start()
+			} else {
+				log.Printf("Match %s country %s level %d has only one player. Removing the match...\n",
+					m.(*match.Match).MatchID,
+					m.(*match.Match).Country,
+					m.(*match.Match).Level,
+				)
+			}
+
+			ml.(*match.MatchLocation).Delete(level)
+			return true
+		})
+
+		l.players.Clear()
+		return true
+	})
 }

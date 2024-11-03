@@ -16,6 +16,7 @@ type MatchLocation struct {
 type Matcher interface {
 	Match(matchID string) *Match
 	AddPlayer(p player.Player)
+	GetPlayersCount() int
 	Start()
 }
 
@@ -60,6 +61,10 @@ func (m *Match) AddPlayer(p player.Player) {
 func (m *Match) Start() {
 	m.started = true
 	log.Printf("Match %s started. Notifying %d players...", m.MatchID, len(m.players))
+}
+
+func (m *Match) GetPlayersCount() int {
+	return len(m.players)
 }
 
 func (m *Match) GetLeaderboard() LeaderBoard {
