@@ -74,10 +74,16 @@ func (l *Lobby) AddPlayer(p player.Player) {
 	matchLocation := &match.MatchLocation{}
 	loaded, ok := l.matchLocations.Load(p.Country)
 	if !ok {
-		newMatch := match.NewMatch(p.Country, p.Level)
+		levelToStore := p.Level
+		// If the player's level is 1, store the match at level 2
+		// to allow players from level 1 to join the match as well as players from level 2 and 3
+		if p.Level == 1 {
+			levelToStore = 2
+		}
+		newMatch := match.NewMatch(p.Country, levelToStore)
 		newMatch.AddPlayer(p)
 
-		matchLocation.Store(p.Level, newMatch)
+		matchLocation.Store(levelToStore, newMatch)
 		l.matchLocations.Store(p.Country, matchLocation)
 		return
 	}
@@ -111,6 +117,7 @@ func (l *Lobby) AddPlayer(p player.Player) {
 	}
 
 	// If no match is found, create a new match
+	log.Printf("No existing match found for Player %s at any nearby levels. Creating new match at level %d", p.PlayerID, p.Level)
 	m := match.NewMatch(p.Country, p.Level)
 	m.AddPlayer(p)
 
